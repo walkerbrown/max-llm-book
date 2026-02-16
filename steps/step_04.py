@@ -27,12 +27,17 @@ Run: pixi run s04
 # Hint: You'll need Dim, DimLike from max.graph
 # Hint: You'll also need Linear and Module from max.nn
 
+import math
+from typing import cast
+import max.functional as F
+
 from max.tensor import Tensor
+from max.nn import Linear, Module
 from step_01 import GPT2Config
 
 # TODO: Copy causal_mask function from solution_02.py
 # This is the same function you implemented in Step 02
-
+from step_03 import causal_mask
 
 class GPT2MultiHeadAttention(Module):
     """Multi-head attention for GPT-2."""
@@ -47,11 +52,11 @@ class GPT2MultiHeadAttention(Module):
 
         # TODO: Create combined Q/K/V projection
         # Hint: Use Linear(self.embed_dim, 3 * self.embed_dim, bias=True)
-        self.c_attn = None
+        self.c_attn = Linear(self.embed_dim, 3 * self.embed_dim, bias=True)
 
         # TODO: Create output projection
         # Hint: Use Linear(self.embed_dim, self.embed_dim, bias=True)
-        self.c_proj = None
+        self.c_proj = Linear(self.embed_dim, self.embed_dim, bias=True)
 
     def _split_heads(
         self, tensor: Tensor, num_heads: int, attn_head_size: int
@@ -69,11 +74,12 @@ class GPT2MultiHeadAttention(Module):
         # TODO: Add head dimension
         # Hint: new_shape = tensor.shape[:-1] + [num_heads, attn_head_size]
         # Hint: tensor = tensor.reshape(new_shape)
-        pass
+        new_shape = tensor.shape[:-1] + [num_heads, attn_head_size]
+        tensor = tensor.reshape(new_shape)
 
         # TODO: Move heads dimension to position 1
         # Hint: return tensor.transpose(-3, -2)
-        return None
+        return tensor.transpose(-3, -2)
 
     def _merge_heads(
         self, tensor: Tensor, num_heads: int, attn_head_size: int
@@ -90,12 +96,13 @@ class GPT2MultiHeadAttention(Module):
         """
         # TODO: Move heads dimension back
         # Hint: tensor = tensor.transpose(-3, -2)
-        pass
+        tensor = tensor.transpose(-3, -2)
 
         # TODO: Flatten head dimensions
         # Hint: new_shape = tensor.shape[:-2] + [num_heads * attn_head_size]
         # Hint: return tensor.reshape(new_shape)
-        return None
+        new_shape = tensor.shape[:-2] + [num_heads * attn_head_size]
+        return tensor.reshape(new_shape)
 
     def _attn(self, query: Tensor, key: Tensor, value: Tensor) -> Tensor:
         """Compute attention for all heads in parallel.
@@ -115,7 +122,15 @@ class GPT2MultiHeadAttention(Module):
         # Hint: Apply causal mask using causal_mask function
         # Hint: Apply softmax: F.softmax(attn_weights)
         # Hint: Weighted sum: attn_weights @ value
-        return None
+        attn_weights = query @ key.transpose(-1, -2)
+        attn_weights = attn_weights / math.sqrt(self.head_dim)
+
+        mask = causal_mask(query.shape[-2], 0, dtype=query.dtype, device=query.device)
+        attn_weights = attn_weights + mask
+
+        attn_weights = F.softmax(attn_weights)
+        weighted_sum = attn_weights @ value
+        return weighted_sum
 
     def forward(self, hidden_states: Tensor) -> Tensor:
         """Apply multi-head attention.
@@ -129,23 +144,27 @@ class GPT2MultiHeadAttention(Module):
         # TODO: Project to Q, K, V
         # Hint: qkv = self.c_attn(hidden_states)
         # Hint: query, key, value = F.split(qkv, [self.split_size, self.split_size, self.split_size], axis=-1)
-        pass
+        qkv = self.c_attn(hidden_states)
+        query, key, value = F.split(qkv, [self.split_size, self.split_size, self.split_size], axis=-1)
 
         # TODO: Split into multiple heads
         # Hint: query = self._split_heads(query, self.num_heads, self.head_dim)
         # Hint: key = self._split_heads(key, self.num_heads, self.head_dim)
         # Hint: value = self._split_heads(value, self.num_heads, self.head_dim)
-        pass
+        query = self._split_heads(cast(Tensor, query), self.num_heads, self.head_dim)
+        key = self._split_heads(cast(Tensor, key), self.num_heads, self.head_dim)
+        value = self._split_heads(cast(Tensor, value), self.num_heads, self.head_dim)
 
         # TODO: Apply attention
         # Hint: attn_output = self._attn(query, key, value)
-        pass
+        attn_output = self._attn(query, key, value)
 
         # TODO: Merge heads back
         # Hint: attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
-        pass
+        attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
 
         # TODO: Output projection
         # Hint: attn_output = self.c_proj(attn_output)
         # Hint: return attn_output
-        return None
+        attn_output = self.c_proj(attn_output)
+        return attn_output

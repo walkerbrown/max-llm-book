@@ -22,7 +22,9 @@ Run: pixi run s09
 # Hint: You'll need DType from max.dtype
 # Hint: You'll need Tensor from max.tensor
 
-from max.driver import Device
+import numpy as np
+from max.driver import Device, CPU
+from max.dtype import DType
 from max.tensor import Tensor
 from transformers import GPT2Tokenizer
 
@@ -43,12 +45,12 @@ def encode_text(
     """
     # TODO: Encode text to token IDs
     # Hint: token_ids = tokenizer.encode(text, max_length=max_length, truncation=True)
-    pass
+    token_ids = tokenizer.encode(text, max_length=max_length, truncation=True)
 
     # TODO: Convert to MAX tensor
     # Hint: return Tensor.constant([token_ids], dtype=DType.int64, device=device)
     # Note: Wrap tokens in a list to create batch dimension
-    return None
+    return Tensor.constant([token_ids], dtype=DType.int64, device=device)
 
 
 def decode_tokens(token_ids: Tensor, tokenizer: GPT2Tokenizer) -> str:
@@ -65,17 +67,17 @@ def decode_tokens(token_ids: Tensor, tokenizer: GPT2Tokenizer) -> str:
     # Hint: Create a new variable with type annotation: token_ids_np: np.ndarray
     # Hint: token_ids_np = np.from_dlpack(token_ids.to(CPU()))
     # Note: This makes the type conversion from Tensor to np.ndarray explicit
-    pass
+    token_ids_np: np.ndarray = np.from_dlpack(token_ids.to(CPU()))
 
     # TODO: Flatten if needed
     # Hint: if token_ids_np.ndim > 1: token_ids_np = token_ids_np.flatten()
-    pass
+    if token_ids_np.ndim > 1: token_ids_np = token_ids_np.flatten()
 
     # TODO: Convert to Python list explicitly
     # Hint: Create a new variable: token_ids_list: list = token_ids_np.tolist()
     # Note: This makes the conversion from np.ndarray to list explicit
-    pass
+    token_ids_list = token_ids_np.tolist()
 
     # TODO: Decode to text
     # Hint: return tokenizer.decode(token_ids_list, skip_special_tokens=True)
-    return None
+    return tokenizer.decode(token_ids_list, skip_special_tokens=True)

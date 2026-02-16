@@ -26,6 +26,7 @@ Run: pixi run s05
 from max.graph import DimLike
 from max.nn import Module
 from max.tensor import Tensor
+import max.functional as F
 
 
 class LayerNorm(Module):
@@ -44,12 +45,12 @@ class LayerNorm(Module):
         # TODO: Create self.weight as a Tensor of ones with shape [dim]
         # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.ones
         # Hint: This is the gamma parameter in layer normalization
-        self.weight = None
+        self.weight = Tensor.ones([dim])
 
         # TODO: Create self.bias as a Tensor of zeros with shape [dim]
         # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.zeros
         # Hint: This is the beta parameter in layer normalization
-        self.bias = None
+        self.bias = Tensor.zeros([dim])
 
     def forward(self, x: Tensor) -> Tensor:
         """Apply layer normalization.
@@ -64,4 +65,4 @@ class LayerNorm(Module):
         # TODO: Use F.layer_norm() with x, gamma=self.weight, beta=self.bias, epsilon=self.eps
         # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.layer_norm
         # Hint: Layer normalization normalizes across the last dimension
-        return None
+        return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)

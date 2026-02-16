@@ -20,8 +20,9 @@ Run: pixi run s08
 # Hint: You'll need Linear and Module from max.nn
 
 from max.tensor import Tensor
+from max.nn import Linear, Module
 from step_01 import GPT2Config
-
+from step_07 import MaxGPT2Model
 
 class MaxGPT2LMHeadModel(Module):
     """Complete GPT-2 model with language modeling head."""
@@ -38,12 +39,12 @@ class MaxGPT2LMHeadModel(Module):
 
         # TODO: Create the transformer
         # Hint: Use MaxGPT2Model(config)
-        self.transformer = None
+        self.transformer = MaxGPT2Model(config)
 
         # TODO: Create language modeling head
         # Hint: Use Linear(config.n_embd, config.vocab_size, bias=False)
         # Projects from hidden dimension to vocabulary size
-        self.lm_head = None
+        self.lm_head = Linear(config.n_embd, config.vocab_size, bias=False)
 
     def forward(self, input_ids: Tensor) -> Tensor:
         """Forward pass through transformer and LM head.
@@ -56,11 +57,11 @@ class MaxGPT2LMHeadModel(Module):
         """
         # TODO: Get hidden states from transformer
         # Hint: hidden_states = self.transformer(input_ids)
-        pass
+        hidden_states = self.transformer(input_ids)
 
         # TODO: Project to vocabulary logits
         # Hint: logits = self.lm_head(hidden_states)
-        pass
+        logits = self.lm_head(hidden_states)
 
         # TODO: Return logits
-        return None
+        return logits

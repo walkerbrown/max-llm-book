@@ -19,9 +19,13 @@ Run: pixi run s06
 
 # TODO: Import required modules
 # Hint: You'll need Module from max.nn
+from max.nn import Module
 
 from max.tensor import Tensor
 from step_01 import GPT2Config
+from step_02 import GPT2MLP
+from step_04 import GPT2MultiHeadAttention
+from step_05 import LayerNorm
 
 
 class GPT2Block(Module):
@@ -44,19 +48,19 @@ class GPT2Block(Module):
 
         # TODO: Create first layer norm (before attention)
         # Hint: Use LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
-        self.ln_1 = None
+        self.ln_1 = LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
 
         # TODO: Create multi-head attention
         # Hint: Use GPT2MultiHeadAttention(config)
-        self.attn = None
+        self.attn = GPT2MultiHeadAttention(config)
 
         # TODO: Create second layer norm (before MLP)
         # Hint: Use LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
-        self.ln_2 = None
+        self.ln_2 = LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
 
         # TODO: Create MLP
         # Hint: Use GPT2MLP(inner_dim, config)
-        self.mlp = None
+        self.mlp = GPT2MLP(inner_dim, config)
 
     def forward(self, hidden_states: Tensor) -> Tensor:
         """Apply transformer block.
@@ -72,14 +76,20 @@ class GPT2Block(Module):
         # Hint: hidden_states = self.ln_1(hidden_states)
         # Hint: attn_output = self.attn(hidden_states)
         # Hint: hidden_states = attn_output + residual
-        pass
+        residual = hidden_states
+        hidden_states = self.ln_1(hidden_states)
+        attn_output = self.attn(hidden_states)
+        hidden_states = attn_output + residual
 
         # TODO: MLP block with residual connection
         # Hint: residual = hidden_states
         # Hint: hidden_states = self.ln_2(hidden_states)
         # Hint: feed_forward_hidden_states = self.mlp(hidden_states)
         # Hint: hidden_states = residual + feed_forward_hidden_states
-        pass
+        residual = hidden_states
+        hidden_states = self.ln_2(hidden_states)
+        feed_forward_hidden_states = self.mlp(hidden_states)
+        hidden_states = residual + feed_forward_hidden_states
 
         # TODO: Return the output
-        return None
+        return hidden_states

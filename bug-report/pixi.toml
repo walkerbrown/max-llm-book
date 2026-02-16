@@ -1,0 +1,13 @@
+[workspace]
+channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+name = "metal-slice-bug-repro"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+slice-offset = "python repro_metal_slice_offset.py"
+multi-view = "python repro_metal_multi_view_output.py"
+
+[dependencies]
+modular = "==26.2.0.dev2026021505"
+numpy = ">=2.0.0,<3"
